@@ -1,0 +1,91 @@
+# Codemagic CI/CD Configuration for "ነጃሺ አረብኛ መማሪያ" (learnarabic)
+# For detailed documentation, visit https://docs.codemagic.io
+
+workflows:
+  android-workflow:
+    name: Android Build Workflow
+    max_build_duration: 60
+    instance_type: linux_x2  # Runs on a fast Linux instance (billing enabled) or default fallback
+    environment:
+      flutter: stable
+      groups:
+        # Define these environment groups in the Codemagic UI if publishing
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.example.learnarabic" # Replace with your actual Android package name
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+        - pattern: 'master'
+          include: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+      - name: Install Flutter Dependencies
+        script: |
+          flutter pub get
+      - name: Run Flutter Lint & Analysis
+        script: |
+          flutter analyze
+      - name: Run Unit Tests
+        script: |
+          flutter test
+      - name: Build Android APK (Debug & Release)
+        script: |
+          flutter build apk --debug
+          flutter build apk --release
+      - name: Build Android App Bundle (AAB)
+        script: |
+          # The App Bundle is used for uploading to Google Play Store
+          flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+
+  ios-workflow:
+    name: iOS Build Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m2 # Required for building iOS apps (requires macOS host)
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        # Define iOS certificate / provisioning profile credentials in Codemagic UI
+        - app_store_credentials
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+        - pattern: 'master'
+          include: true
+    scripts:
+      - name: Install Flutter Dependencies
+        script: |
+          flutter pub get
+      - name: Run Flutter Lint & Analysis
+        script: |
+          flutter analyze
+      - name: Run Unit Tests
+        script: |
+          flutter test
+      - name: Set up iOS Code Signing (Optional)
+        script: |
+          # If automatic code signing is configured in Codemagic, it can be initialized here.
+          # keychain initialize
+          # app-store-connect fetch-signing-files "com.example.learnarabic" --project-id "YOUR_PROJECT_ID"
+          # keychain add-certificates
+          echo "Setting up code signing certificates..."
+      - name: Build iOS IPA
+        script: |
+          # Build a release IPA (needs correct provisioning profiles configured if signing)
+          # Use --no-codesign if you want to build an unsigned ipa for testing
+          flutter build ipa --release --no-codesign
+    artifacts:
+      - build/ios/ipa/*.ipa

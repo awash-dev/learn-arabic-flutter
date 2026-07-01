@@ -4,7 +4,7 @@ import '../utils/storage.dart';
 import 'home_screen.dart';
 
 // Default password set in the app
-const String _defaultPassword = 'hamazuka@kalid2025';
+const String _defaultPassword = '99999999';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
